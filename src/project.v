@@ -23,7 +23,7 @@ module tt_um_example (
   reg [7:0] value;
   assign uo_out = value;
 
-  always @(posedge clk or negedge rst_n) begin
+  always @(posedge clk) begin
     if (rst_n == 1'b0) begin
       value <= ui_in;
     end else if (value == 8'b11111111) begin

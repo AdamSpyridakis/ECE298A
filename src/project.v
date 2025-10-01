@@ -20,20 +20,24 @@ module tt_um_example (
   assign uio_out = 0;
   assign uio_oe  = 0;
 
+  wire load = uio_in[0];
   reg [7:0] value;
-  assign uo_out = value;
+  assign uo_out = ena ? value : 8'bzzzzzzzz;
 
   always @(posedge clk or negedge rst_n) begin
-    if (rst_n == 1'b0) begin
-      value <= ui_in;
-    end else if (value == 8'b11111111) begin
-      value <= 8'b00000000;
-    end else begin
-      value <= uo_out + 1;
-    end
+      // asynchronous reset
+      if (rst_n == 1'b0) begin
+        value <= 8'b00000000;
+      // synchronous load
+      end else if (load == 1'b1) begin
+          value <= ui_in;
+      // increment
+      end else begin
+          value <= value + 1'b1;
+      end
   end
 
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena, uio_in, 1'b0};
+  wire _unused = &{ena, uio_in [7:1], 1'b0};
 
 endmodule

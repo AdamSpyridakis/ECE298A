@@ -3,38 +3,65 @@
 
 import cocotb
 from cocotb.clock import Clock
+from cocotb.triggers import Edge
 from cocotb.triggers import ClockCycles
 
+async def setup_test(dut):
+    dut._log.info("Setup")
+    dut.ena.value = 1
+    dut.rst_n.value = 1
+    dut.ui_in.value = 0
+    dut.uo_out.value = 0
+    dut.uio_in.value = 0
 
-@cocotb.test()
-async def test_project(dut):
-    dut._log.info("Start")
-
-    # Set the clock period to 10 us (100 KHz)
-    clock = Clock(dut.clk, 10, units="us")
+    # Set the clock period to 1 ns (100 MHz)
+    clock = Clock(dut.clk, 10, units="ns")
     cocotb.start_soon(clock.start())
 
-    # Reset
-    dut._log.info("Reset")
-    dut.ena.value = 1
-    dut.ui_in.value = 0
-    dut.uio_in.value = 0
+@cocotb.test()
+async def count(dut):
+    await setup_test(dut)
+    dut._log.info("Test count behavior")
+
+    # Reset to 0.
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
+    await ClockCycles(dut.clk, 5)
+    assert dut.uo_out.value == 0
     dut.rst_n.value = 1
 
-    dut._log.info("Test project behavior")
+    # check count from 1-255, 0-45
+    for i in range(300):
+        await ClockCycles(dut.clk, 1)
+        await Edge(dut.uo_out)
+        assert dut.uo_out.value == (i + 1) % 256
 
-    # Set the input values you want to test
-    dut.ui_in.value = 20
-    dut.uio_in.value = 30
+@cocotb.test()
+async def notEnabled(dut):
+    await setup_test(dut)
+    dut._log.info("Test counter disabled")
 
-    # Wait for one clock cycle to see the output values
-    await ClockCycles(dut.clk, 1)
+    # disable the counter
+    dut.ena.value = 0
+    await ClockCycles(dut.clk, 5)
+    # expect high Z
+    assert dut.uo_out.value.is_resolvable == False
 
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
+@cocotb.test()
+async def load(dut):
+    await setup_test(dut)
+    dut._log.info("Test synchronous load behavior")
+
+    dut.uio_in.value = 1
+
+    # test handful of arbitrary values
+    dut.ui_in.value = 50
+    await ClockCycles(dut.clk, 5)
     assert dut.uo_out.value == 50
 
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.
+    dut.ui_in.value = 186
+    await ClockCycles(dut.clk, 5)
+    assert dut.uo_out.value == 186
+
+    dut.ui_in.value = 233
+    await ClockCycles(dut.clk, 5)
+    assert dut.uo_out.value == 233

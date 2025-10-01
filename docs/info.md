@@ -9,12 +9,16 @@ You can also include images in this folder and reference them in the markdown. E
 
 ## How it works
 
-Explain how your project works
+This is an 8-bit up counter with tri-state outputs, asynchronous reset, and synchronous load functionality.
+
+Set the enable bit, ena, to enable the counter outputs. The counter counts while the enable bit is low,
+but the output will be high Z. Once the enable bit is set, the counter will drive the output pins.
+
+Unset the rst_n to set the counter to 0.
+
+Set the uio_in[0] bit to 1 and set the desired counter value on uo_out[7:0] to load that value into the
+counter.
 
 ## How to test
 
-Explain how to use your project
-
-## External hardware
-
-List external hardware used in your project (e.g. PMOD, LED display, etc), if any
+Testing is done using cocotb framework.
